@@ -21,8 +21,9 @@ double conversion_P_lgmmHg2kPa(double lgp);
 
 double lgsvp(double saturationTemperatureH2O);
 
-
 double saturationTemperatureH2O(double saturationPressureH2O_kPa);
+
+double _H2O_enthalpy(double saturationTemperatureH2O_C, double saturationTemperatureLiBr_C);
 
 double dewTLiBr(double saturationTemperatureH2O_C, double concentrationOfLiBrSolution);
 
@@ -42,6 +43,7 @@ int main(int argc, const char * argv[]) {
     
     double solutionTemperatureLiBr_C;
     double h_LibrSolution;
+    double h_H2O;
     
 //--求水的饱和蒸汽压力
     cout << "请输入当前温度（摄氏度）\n";
@@ -56,11 +58,11 @@ int main(int argc, const char * argv[]) {
     << "lgp =" <<lgp <<endl
     <<"p ="<< currentPressure <<" kPa"<< endl;
 
-////--求水的饱和蒸汽温度
+//--求水的饱和蒸汽温度
     cout << "请输入当前压力（kPA）\n";
     cin >> currentPressure;
     cout << "饱和温度T =" << saturationTemperatureH2O(currentPressure) << "˚C\n";
-//
+    
 //--求溴化锂溶液的露点温度
     cout << "\n输入压力为p时水的饱和温度（摄氏度，0℃ < t < 100℃）\n";
     cin >> saturationTemperatureH2O_C;
@@ -71,6 +73,9 @@ int main(int argc, const char * argv[]) {
     
     cout << "溴化锂溶液的露点温度为：\n";
     cout << "t =" << dewTOfLiBr<<"℃"<<endl;
+
+//--求水或水蒸气的焓值
+    h_H2O = _H2O_enthalpy(saturationTemperatureH2O_C, dewTOfLiBr);
     
 //--求溴化锂溶液的浓度
     cout << "\n输入溴化锂溶液的温度(˚C)\n";
@@ -193,20 +198,45 @@ double saturationTemperatureH2O(double saturationPressureH2O_kPa){
  
  t1 为压力p时饱和水蒸气的温度，可利用#05计算
  */
-double _latentHeatOfVaporization_H2O(double satsaturationTemperatureH2O ){
-    return 0;
+double _H2O_latentHeatOfVaporization(double saturationTemperatureH2O_C){
+    
+    double t1 = saturationTemperatureH2O_C;
+    double y = 5.1463 - 1540/(t1+273.16);
+    double r = 597.34 - 0.555 * t1 - 0.2389 * pow(10, y);
+    cout << "\t温度为" << t1 << "时水的气化潜热r = " << r << endl;
+    return r;
+}
+
+/*
+ #07
+ 计算水或水蒸气的焓值
+ h = h2 + Cp(t-t1)
+ h2 = h1 + r
+ h1 = t1 + 100
+ 
+ t1 为压力p时饱和水蒸气的温度，可利用#05计算 ˚C
+ t 为过热水蒸气的温度即压力p时溶液的平衡温度，可利用#08计算 ˚C
+ h1 为温度为t1时饱和水的焓 kcal/kg
+ h2 为温度为kcal/kg
+ Cp 为过热水蒸气t1-t的定呀平均比热。计算普通单级循环蒸汽焓值时,Cp ≈ 0.46kcal/kg
+ */
+
+double _H2O_enthalpy(double saturationTemperatureH2O_C, double saturationTemperatureLiBr_C){
+    double Cp = 0.46;
+    double t = saturationTemperatureLiBr_C;
+    double t1 = saturationTemperatureH2O_C;
+    double r = _H2O_latentHeatOfVaporization(t1);
+    double h1 = t1 + 100;
+    double h2 = h1 + r;
+    double h = h2 + Cp * (t - t1);
+    return h;
 }
 
 
+
 /*
- 计算水或水蒸气的焓值
- */
-
-
-
-
-
-/*计算溴化锂的露点温度(Calculate dew temperature of LiBr)
+ #08
+ 计算溴化锂的露点温度(Calculate dew temperature of LiBr)
 
     saturationTemperatureH2O_C:水的饱和温度（摄氏度）
     concentrationOfLiBrSolution :100kg 溴化锂水溶液中含有溴化锂的千克数
