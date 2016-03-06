@@ -13,22 +13,40 @@
 #include <math.h>
 using namespace std;
 
+//摄氏度转开尔文温度
 double conversionT_C2K(double temperature_C);
 
+//开尔文温度转摄氏度
 double conversionT_K2C(double temperature_K);
 
+//压力转换 mm汞柱转千帕
 double conversion_P_lgmmHg2kPa(double lgp);
 
+//计算水的饱和蒸汽压力 
 double lgsvp(double saturationTemperatureH2O);
 
+//计算水的饱和温度
 double saturationTemperatureH2O(double saturationPressureH2O_kPa);
 
-double _H2O_enthalpy(double saturationTemperatureH2O_C, double saturationTemperatureLiBr_C);
+//千卡换算千焦
+double conversionQ_kCal2kJ(double kCal);
 
+//水的焓值（kJ/kg）
+double _H2O_enthalpy(double temperatureH2O_C);
+
+//水蒸气的焓值
+double _H2OVapor_enthalpy(double temperatureH2O_C);
+
+//过热水蒸汽的焓值
+double _H2OHeat_enthalpy(double saturationTemperatureH2O_C, double saturationTemperatureLiBr_C);
+
+//溴化锂溶液露点温度
 double dewTLiBr(double saturationTemperatureH2O_C, double concentrationOfLiBrSolution);
 
+//溴化锂水溶液焓值
 double enthalpyLiBrSolution(double solutionTemperatureLiBr_C,double concentrationOfLiBrSolution);
 
+//溴化锂溶液浓度
 double _concentration_LiBrSolution(double solutionTemperatureLiBr_C,double pressure_kPa);
 
 int main(int argc, const char * argv[]) {
@@ -46,22 +64,22 @@ int main(int argc, const char * argv[]) {
     double h_H2O;
     
 //--求水的饱和蒸汽压力
-    cout << "请输入当前温度（摄氏度）\n";
-    cin >> saturationTemperatureH2O_C;
-    
-    double lgp;
-    saturationTemperatureH2O_K =  conversionT_C2K(saturationTemperatureH2O_C);
-    lgp = lgsvp(saturationTemperatureH2O_K);
-    currentPressure = conversion_P_lgmmHg2kPa(lgp);
-    
-    cout << "当前温度下水的饱和蒸汽压为：\n"
-    << "lgp =" <<lgp <<endl
-    <<"p ="<< currentPressure <<" kPa"<< endl;
+//    cout << "请输入当前温度（摄氏度）\n";
+//    cin >> saturationTemperatureH2O_C;
+//    
+//    double lgp;
+//    saturationTemperatureH2O_K =  conversionT_C2K(saturationTemperatureH2O_C);
+//    lgp = lgsvp(saturationTemperatureH2O_K);
+//    currentPressure = conversion_P_lgmmHg2kPa(lgp);
+//    
+//    cout << "当前温度下水的饱和蒸汽压为：\n"
+//    << "lgp =" <<lgp <<endl
+//    <<"p ="<< currentPressure <<" kPa"<< endl;
 
 //--求水的饱和蒸汽温度
-    cout << "请输入当前压力（kPA）\n";
-    cin >> currentPressure;
-    cout << "饱和温度T =" << saturationTemperatureH2O(currentPressure) << "˚C\n";
+//    cout << "请输入当前压力（kPA）\n";
+//    cin >> currentPressure;
+//    cout << "饱和温度T =" << saturationTemperatureH2O(currentPressure) << "˚C\n";
     
 //--求溴化锂溶液的露点温度
     cout << "\n输入压力为p时水的饱和温度（摄氏度，0℃ < t < 100℃）\n";
@@ -74,17 +92,22 @@ int main(int argc, const char * argv[]) {
     cout << "溴化锂溶液的露点温度为：\n";
     cout << "t =" << dewTOfLiBr<<"℃"<<endl;
 
-//--求水或水蒸气的焓值
-    h_H2O = _H2O_enthalpy(saturationTemperatureH2O_C, dewTOfLiBr);
+//--求水和水蒸气的焓值
+    cout << "此温度下水的焓值为: \n";
+    cout << "h1 =" << _H2O_enthalpy(saturationTemperatureH2O_C) << "kJ/kg" <<endl;
+    cout << "水蒸气的焓值为： \n";
+    cout << "h2 =" << _H2OVapor_enthalpy(saturationTemperatureH2O_C) << "kJ/kg" << endl;
+    cout << "过热水蒸气的焓值为： \n";
+    cout << "h = " << _H2OHeat_enthalpy(128.744, 75);
     
 //--求溴化锂溶液的浓度
-    cout << "\n输入溴化锂溶液的温度(˚C)\n";
-    cin >> solutionTemperatureLiBr_C;
-    cout << "输入溴化锂溶液的压强(kPa)\n";
-    cin >> currentPressure;
-    double x = _concentration_LiBrSolution(solutionTemperatureLiBr_C, currentPressure);
-    cout  << "x =" << x << "%" <<endl;
-    
+//    cout << "\n输入溴化锂溶液的温度(˚C)\n";
+//    cin >> solutionTemperatureLiBr_C;
+//    cout << "输入溴化锂溶液的压强(kPa)\n";
+//    cin >> currentPressure;
+//    double x = _concentration_LiBrSolution(solutionTemperatureLiBr_C, currentPressure);
+//    cout  << "x =" << x << "%" <<endl;
+//    
 //--求溴化锂溶液的焓值
 //    cout << "输入溴化锂溶液的温度(˚C)\n";
 //    cin >> solutionTemperatureLiBr_C;
@@ -192,24 +215,52 @@ double saturationTemperatureH2O(double saturationPressureH2O_kPa){
 
 /*
  #06
+ 换算：1千卡 = 4.1858千焦
+ */
+double conversionQ_kCal2kJ(double kCal){
+    return kCal * 4.1858;
+}
+
+
+/*
+ #07
  计算饱和水的气化潜热(latent heat of vaporization)
  r = 597.34 - 0.555t1 - 0.2389 * 10^y
  y = 5.1463 - 1540/(t1+273.16)
- 
+ 结果转化为kJ
  t1 为压力p时饱和水蒸气的温度，可利用#05计算
  */
 double _H2O_latentHeatOfVaporization(double saturationTemperatureH2O_C){
     
     double t1 = saturationTemperatureH2O_C;
     double y = 5.1463 - 1540/(t1+273.16);
-    double r = 597.34 - 0.555 * t1 - 0.2389 * pow(10, y);
-    cout << "\t温度为" << t1 << "时水的气化潜热r = " << r << endl;
+    double r = (597.34 - 0.555 * t1 - 0.2389 * pow(10, y))*4.1858;
+//    cout << "\t温度为" << t1 << "时水的气化潜热r = " << r << endl;
     return r;
 }
 
 /*
- #07
- 计算水或水蒸气的焓值
+ #08
+ 计算水的焓值: h1 = t1 + 100 (kcal/kg)
+ t1为水的温度（˚C）
+ 结果用公式6换算成千焦
+*/
+double _H2O_enthalpy(double temperatureH2O_C){
+    return conversionQ_kCal2kJ(temperatureH2O_C + 100.00);
+}
+
+/*
+ #09
+ 计算水蒸气的焓值：h2 = h1 + r
+ r为饱和水的气化潜热
+*/
+double _H2OVapor_enthalpy(double temperatureH2O_C){
+    return _H2O_enthalpy(temperatureH2O_C) + _H2O_latentHeatOfVaporization(temperatureH2O_C);
+}
+
+/*
+ #0
+过热水蒸气的焓值
  h = h2 + Cp(t-t1)
  h2 = h1 + r
  h1 = t1 + 100
@@ -221,21 +272,19 @@ double _H2O_latentHeatOfVaporization(double saturationTemperatureH2O_C){
  Cp 为过热水蒸气t1-t的定呀平均比热。计算普通单级循环蒸汽焓值时,Cp ≈ 0.46kcal/kg
  */
 
-double _H2O_enthalpy(double saturationTemperatureH2O_C, double saturationTemperatureLiBr_C){
+double _H2OHeat_enthalpy(double saturationTemperatureH2O_C, double saturationTemperatureLiBr_C){
     double Cp = 0.46;
     double t = saturationTemperatureLiBr_C;
     double t1 = saturationTemperatureH2O_C;
-    double r = _H2O_latentHeatOfVaporization(t1);
-    double h1 = t1 + 100;
-    double h2 = h1 + r;
-    double h = h2 + Cp * (t - t1);
+    double h2 = _H2OVapor_enthalpy(saturationTemperatureH2O_C);
+    double h = h2 + conversionQ_kCal2kJ(Cp * (t - t1));
     return h;
 }
 
 
 
 /*
- #08
+ #
  计算溴化锂的露点温度(Calculate dew temperature of LiBr)
 
     saturationTemperatureH2O_C:水的饱和温度（摄氏度）
